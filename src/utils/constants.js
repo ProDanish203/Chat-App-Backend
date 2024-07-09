@@ -1,7 +1,3 @@
-export const ROLES = Object.freeze({
-  ADMIN: "admin",
-  USER: "user",
-});
 
 export const STATUS_CODES = Object.freeze({
   SUCCESS: 200,

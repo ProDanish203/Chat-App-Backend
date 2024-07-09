@@ -33,7 +33,7 @@ app.disable("x-powered-by");
 
 app.get("/", (req, res) => {
   res.status(200).json({
-    message: "Boilerplate API",
+    message: "Chat application - API",
   });
 });
 

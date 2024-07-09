@@ -1,9 +1,8 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, models } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoosePaginate from "mongoose-paginate-v2";
 import validator from "validator";
-import { ROLES } from "../utils/constants.js";
 
 const UserSchema = new Schema(
   {
@@ -39,19 +38,21 @@ const UserSchema = new Schema(
       index: true,
     },
     avatar: {
-      public_id: String,
-      url: String,
-    },
-    role: {
-      type: String,
-      enum: Object.values(ROLES),
-      default: ROLES.USER,
+      public_id: {
+        type: String,
+        required: [true, "Public id is required"],
+      },
+      url: {
+        type: String,
+        required: [true, "Avatar url is required"],
+      }
     },
     hasNotifications: {
       type: Boolean,
       default: false,
     },
     country: String,
+    bio: String,
     phone: String,
     refreshToken: String,
     forgotPasswordToken: String,
@@ -100,4 +101,4 @@ UserSchema.methods.generateRefreshToken = async function () {
 
 UserSchema.plugin(mongoosePaginate);
 
-export const User = model("User", UserSchema);
+export const User = models.User || model("User", UserSchema);

@@ -8,6 +8,7 @@ import cookieParser from "cookie-parser";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 // Routes
 import authRoute from "./routes/auth.route.js";
+import requestRoute from "./routes/request.route.js";
 
 // .env config
 config();
@@ -15,11 +16,11 @@ config();
 const app = express();
 
 const corsOptions = {
-  credentials: true,
-  origin:
-    process.env.NODE_ENV === "production"
-      ? "http://localhost:3000"
-      : "http://localhost:3000",
+    credentials: true,
+    origin:
+        process.env.NODE_ENV === "production"
+            ? "http://localhost:3000"
+            : "http://localhost:3000",
 };
 
 app.use(cors(corsOptions));
@@ -32,13 +33,14 @@ app.use(cookieParser());
 app.disable("x-powered-by");
 
 app.get("/", (req, res) => {
-  res.status(200).json({
-    message: "Chat application - API",
-  });
+    res.status(200).json({
+        message: "Chat application - API",
+    });
 });
 
 // Routes
 app.use("/api/v1/auth", authRoute);
+app.use("/api/v1/request", requestRoute);
 
 // Custom middleware for errors
 app.use(errorMiddleware);
@@ -46,13 +48,13 @@ app.use(errorMiddleware);
 const port = process.env.PORT || 5000;
 
 connDb()
-  .then(() => {
-    app.listen(port, () => {
-      console.log(`Server is listening live on port:${port}`);
+    .then(() => {
+        app.listen(port, () => {
+            console.log(`Server is listening live on port:${port}`);
+        });
+    })
+    .catch((error) => {
+        console.log(`Database Connection Error: ${error}`);
     });
-  })
-  .catch((error) => {
-    console.log(`Database Connection Error: ${error}`);
-  });
 
 export default app;

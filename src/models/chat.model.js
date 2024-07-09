@@ -1,4 +1,4 @@
-import { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
 
 const ChatSchema = new Schema(
@@ -29,4 +29,4 @@ const ChatSchema = new Schema(
 
 ChatSchema.plugin(mongoosePaginate);
 
-export const Chat = models.Chat || model("Chat", ChatSchema);
+export const Chat = mongoose.models.Chat || model("Chat", ChatSchema);

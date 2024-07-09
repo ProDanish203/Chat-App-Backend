@@ -1,4 +1,4 @@
-import { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import mongoosePaginate from "mongoose-paginate-v2";
@@ -101,4 +101,4 @@ UserSchema.methods.generateRefreshToken = async function () {
 
 UserSchema.plugin(mongoosePaginate);
 
-export const User = models.User || model("User", UserSchema);
+export const User = mongoose.models.User || model("User", UserSchema);

@@ -1,4 +1,4 @@
-import { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
 
 const RequestSchema = new Schema(
@@ -23,4 +23,4 @@ const RequestSchema = new Schema(
 
 RequestSchema.plugin(mongoosePaginate);
 
-export const Request = models.Request || model("Request", RequestSchema);
+export const Request = mongoose.models.Request || model("Request", RequestSchema);

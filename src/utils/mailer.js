@@ -3,33 +3,33 @@ import bcrypt from "bcrypt";
 import { User } from "../models/user.model.js";
 
 export const sendVerificationMail = async ({ type, email, userId }) => {
-  try {
-    const token = await bcrypt.hash(userId.toString(), 10);
-    if (!token) return;
+    try {
+        const token = await bcrypt.hash(userId.toString(), 10);
+        if (!token) return;
 
-    if (type === "VERIFY") {
-      await User.findByIdAndUpdate(userId, {
-        verifyToken: token,
-        verifyTokenExpiry: Date.now() + 3600000,
-      });
-    } else if (type === "RESET") {
-      await User.findByIdAndUpdate(userId, {
-        forgotPasswordToken: token,
-        forgotPasswordTokenExpiry: Date.now() + 3600000,
-      });
-    } else return;
+        if (type === "VERIFY") {
+            await User.findByIdAndUpdate(userId, {
+                verifyToken: token,
+                verifyTokenExpiry: Date.now() + 3600000,
+            });
+        } else if (type === "RESET") {
+            await User.findByIdAndUpdate(userId, {
+                forgotPasswordToken: token,
+                forgotPasswordTokenExpiry: Date.now() + 3600000,
+            });
+        } else return;
 
-    const transporter = await nodemailer.createTransport({
-      pool: true,
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.PASSWORD,
-      },
-    });
+        const transporter = await nodemailer.createTransport({
+            pool: true,
+            service: "gmail",
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.PASSWORD,
+            },
+        });
 
-    const subject = `Website | ${type === "VERIFY" ? "Verify your email" : "Reset password"}`;
-    const html = `
+        const subject = `Chat App | ${type === "VERIFY" ? "Verify your email" : "Reset password"}`;
+        const html = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -73,16 +73,16 @@ export const sendVerificationMail = async ({ type, email, userId }) => {
         </html>
         `;
 
-    const mailOptions = {
-      from: "danishsidd203@gmail.com",
-      to: email,
-      html,
-      subject,
-    };
+        const mailOptions = {
+            from: "danishsidd203@gmail.com",
+            to: email,
+            html,
+            subject,
+        };
 
-    const mailResponse = await transporter.sendMail(mailOptions);
-    return mailResponse;
-  } catch (error) {
-    throw new Error(error.message);
-  }
+        const mailResponse = await transporter.sendMail(mailOptions);
+        return mailResponse;
+    } catch (error) {
+        throw new Error(error.message);
+    }
 };

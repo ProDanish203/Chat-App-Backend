@@ -196,8 +196,29 @@ export const getAllFriends = async (req, res, next) => {
 
         return res.status(200).json({
             success: true,
-            message: "Pending requests",
+            message: "My Friends",
             data: friends,
+        });
+    } catch (error) {
+        next(error);
+        console.log(error);
+    }
+};
+
+export const getUsersBySearch = async (req, res, next) => {
+    try {
+        const { search } = req.body;
+        const users = await User.find({
+            $or: [
+                { username: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+            ],
+        }).select("_id username email fullName avatar");
+
+        return res.status(200).json({
+            success: true,
+            message: "Users found",
+            data: users,
         });
     } catch (error) {
         next(error);

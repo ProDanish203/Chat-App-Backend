@@ -132,7 +132,6 @@ export const logoutUser = async (req, res, next) => {
 
         // Cookie options
         const options = {
-            maxAge: 15 * 24 * 60 * 60 * 1000,
             sameSite: "none",
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
@@ -148,6 +147,19 @@ export const logoutUser = async (req, res, next) => {
                 data: {},
             });
     } catch (error) {
+        next(error);
+    }
+};
+
+export const getCurrentUser = async (req, res, next) => {
+    try {
+        return res.status(200).json({
+            success: true,
+            message: "User fetched",
+            data: req.user,
+        });
+    } catch (error) {
+        console.log(error);
         next(error);
     }
 };

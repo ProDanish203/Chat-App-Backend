@@ -76,11 +76,24 @@ export const getPaginatedFriends = async ({
                 _id: 1,
                 status: 1,
                 friendDetails: {
-                    $cond: [
-                        { $eq: ["$sender", currentUser] },
-                        "$receiverDetails",
-                        "$senderDetails",
-                    ],
+                    $let: {
+                        vars: {
+                            selectedUser: {
+                                $cond: [
+                                    { $eq: ["$sender", currentUser] },
+                                    "$receiverDetails",
+                                    "$senderDetails",
+                                ],
+                            },
+                        },
+                        in: {
+                            _id: "$$selectedUser._id",
+                            username: "$$selectedUser.username",
+                            fullName: "$$selectedUser.fullName",
+                            avatar: "$$selectedUser.avatar",
+                            email: "$$selectedUser.email",
+                        },
+                    },
                 },
             },
         },

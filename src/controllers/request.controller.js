@@ -1,3 +1,4 @@
+import { Chat } from "../models/chat.model.js";
 import { Request } from "../models/request.model.js";
 import { User } from "../models/user.model.js";
 import { getPaginatedData, getPaginatedFriends } from "../utils/helpers.js";
@@ -86,6 +87,13 @@ export const acceptOrRejectRequest = async (req, res, next) => {
             status,
         });
         if (!updatedRequest) return next("An error occured, Try again later");
+
+        if (status === "approved") {
+            const chat = await Chat.create({
+                participants: [request.sender, request.receiver],
+            });
+            if (!chat) return next("An error occured, Try again later");
+        }
 
         return res.status(200).json({
             success: true,

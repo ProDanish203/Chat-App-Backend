@@ -55,13 +55,6 @@ export const sendMessage = async (req, res, next) => {
         await chat.save();
 
         // Send the message through socket
-        // const recipientSocketId = getRecipientSocketId(
-        //     chat.participants.find((id) => id !== req.user._id)
-        // );
-        // console.log(recipientSocketId);
-        // if (recipientSocketId) {
-        //     io.to(recipientSocketId).emit("newMessage", newMessage);
-        // }
         const chatParticipants = chat.participants;
         chatParticipants.forEach((participantId) => {
             const participantSocketId = getRecipientSocketId(participantId);

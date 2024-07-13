@@ -19,18 +19,35 @@ export const getRecipientSocketId = (recipientId) => {
 const userSocketMap = {}; // userId: socketId
 
 io.on("connection", (socket) => {
-    console.log("user connected", socket.id);
-
     const userId = socket.handshake.query.userId;
 
     if (userId) userSocketMap[userId] = socket.id;
     // Send data to client
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
-    console.log(userSocketMap);
+    socket.on("startTyping", ({ participants, chatId }) => {
+        participants.forEach((participantId) => {
+            const participantSocketId = getRecipientSocketId(participantId);
+            if (participantSocketId) {
+                io.to(participantSocketId).emit("typing", { chatId, userId });
+            }
+        });
+    });
+
+    socket.on("stopTyping", ({ participants, chatId }) => {
+        participants.forEach((participantId) => {
+            const participantSocketId = getRecipientSocketId(participantId);
+            if (participantSocketId) {
+                io.to(participantSocketId).emit("typingStopped", {
+                    chatId,
+                    userId,
+                });
+            }
+        });
+    });
+
     // Handle the event from client
     socket.on("disconnect", () => {
-        console.log("user disconnected", socket.id);
         delete userSocketMap[userId];
         io.emit("getOnlineUsers", Object.keys(userSocketMap));
     });

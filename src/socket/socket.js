@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
+import { Message } from "../models/message.model.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -22,9 +23,10 @@ io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId;
 
     if (userId) userSocketMap[userId] = socket.id;
-    // Send data to client
+    // Send online users data to client
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
+    // Handle the typing events from client
     socket.on("startTyping", ({ participants, chatId }) => {
         participants.forEach((participantId) => {
             const participantSocketId = getRecipientSocketId(participantId);
@@ -46,7 +48,32 @@ io.on("connection", (socket) => {
         });
     });
 
-    // Handle the event from client
+    socket.on("markMessagesAsSeen", async ({ participants, chatId }) => {
+        participants.forEach(async (participantId) => {
+            const participantSocketId = getRecipientSocketId(participantId);
+            try {
+                if (participantSocketId) {
+                    await Message.updateMany(
+                        {
+                            chatId,
+                            readBy: { $ne: userId },
+                        },
+                        {
+                            $addToSet: { readBy: userId },
+                        }
+                    );
+                    io.to(participantSocketId).emit("messagesSeen", {
+                        chatId,
+                        userId,
+                    });
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        });
+    });
+
+    // Handle the disconnect event from client
     socket.on("disconnect", () => {
         delete userSocketMap[userId];
         io.emit("getOnlineUsers", Object.keys(userSocketMap));

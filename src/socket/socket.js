@@ -48,30 +48,33 @@ io.on("connection", (socket) => {
         });
     });
 
-    socket.on("markMessagesAsSeen", async ({ participants, chatId }) => {
-        participants.forEach(async (participantId) => {
-            const participantSocketId = getRecipientSocketId(participantId);
-            try {
-                if (participantSocketId) {
-                    await Message.updateMany(
-                        {
+    socket.on(
+        "markMessagesAsSeen",
+        async ({ participants, chatId, userId }) => {
+            participants.forEach(async (participantId) => {
+                const participantSocketId = getRecipientSocketId(participantId);
+                try {
+                    if (participantSocketId) {
+                        await Message.updateMany(
+                            {
+                                chatId,
+                                readBy: { $ne: participantId },
+                            },
+                            {
+                                $addToSet: { readBy: participantId },
+                            }
+                        );
+                        io.to(userSocketMap[userId]).emit("messagesSeen", {
                             chatId,
-                            readBy: { $ne: userId },
-                        },
-                        {
-                            $addToSet: { readBy: userId },
-                        }
-                    );
-                    io.to(participantSocketId).emit("messagesSeen", {
-                        chatId,
-                        userId,
-                    });
+                            userId: participantId,
+                        });
+                    }
+                } catch (err) {
+                    console.log(err);
                 }
-            } catch (err) {
-                console.log(err);
-            }
-        });
-    });
+            });
+        }
+    );
 
     // Handle the disconnect event from client
     socket.on("disconnect", () => {

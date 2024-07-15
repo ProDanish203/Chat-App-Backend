@@ -16,7 +16,7 @@ export const getChats = async (req, res, next) => {
             {
                 path: "lastMessage",
                 model: "Message",
-                select: "message readBy createdAt",
+                select: "message readBy sender createdAt",
             },
         ]);
 

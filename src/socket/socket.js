@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import http from "http";
 import express from "express";
 import { Message } from "../models/message.model.js";
+import { Chat } from "../models/Chat.model.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -48,33 +49,38 @@ io.on("connection", (socket) => {
         });
     });
 
-    socket.on(
-        "markMessagesAsSeen",
-        async ({ participants, chatId, userId }) => {
-            participants.forEach(async (participantId) => {
+    socket.on("markMessagesAsSeen", async ({ chatId, userId }) => {
+        try {
+            await Message.updateMany(
+                {
+                    chatId,
+                    readBy: { $ne: userId },
+                },
+                {
+                    $addToSet: { readBy: userId },
+                }
+            );
+
+            // Get all participants in the chat except the current user
+            const chat = await Chat.findById(chatId);
+            const otherParticipants = chat.participants.filter(
+                (participantId) => participantId.toString() !== userId
+            );
+
+            // Emit to all other participants
+            otherParticipants.forEach((participantId) => {
                 const participantSocketId = getRecipientSocketId(participantId);
-                try {
-                    if (participantSocketId) {
-                        await Message.updateMany(
-                            {
-                                chatId,
-                                readBy: { $ne: participantId },
-                            },
-                            {
-                                $addToSet: { readBy: participantId },
-                            }
-                        );
-                        io.to(userSocketMap[userId]).emit("messagesSeen", {
-                            chatId,
-                            userId: participantId,
-                        });
-                    }
-                } catch (err) {
-                    console.log(err);
+                if (participantSocketId) {
+                    io.to(participantSocketId).emit("messagesSeen", {
+                        chatId,
+                        userId,
+                    });
                 }
             });
+        } catch (err) {
+            console.log(err);
         }
-    );
+    });
 
     // Handle the disconnect event from client
     socket.on("disconnect", () => {

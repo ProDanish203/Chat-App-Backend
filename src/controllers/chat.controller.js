@@ -45,6 +45,7 @@ export const getChats = async (req, res, next) => {
                     },
                     lastMessage: {
                         message: 1,
+                        attachments: 1,
                         readBy: 1,
                         sender: 1,
                         createdAt: 1,

@@ -44,14 +44,16 @@ export const deleteFile = async (public_id) => {
 // Upload multiple files on cloudinary
 export const uploadFilesToCloudinary = async (files = []) => {
     const uploadPromises = files.map((file) => {
+        console.log(file)
         return new Promise((resolve, reject) => {
             cloudinary.uploader.upload(
                 getBase64(file),
                 {
                     resource_type: "auto",
-                    public_id: uuid(),
+                    folder: "/chat-app/",
                 },
                 (error, result) => {
+                    console.log(error, result);
                     if (error) return reject(error);
                     resolve(result);
                 }
@@ -68,6 +70,7 @@ export const uploadFilesToCloudinary = async (files = []) => {
         }));
         return formattedResults;
     } catch (err) {
+        console.log(err)
         throw new Error("Error uploading files to cloudinary", err);
     }
 };

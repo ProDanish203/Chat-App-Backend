@@ -6,45 +6,37 @@ import { getPaginatedData, getPaginatedFriends } from "../utils/helpers.js";
 export const sendRequest = async (req, res, next) => {
     try {
         const { receiverId } = req.body;
+        const senderId = req.user._id;
         if (!receiverId) return next("Receiver ID is required");
 
-        if (receiverId == req.user._id)
+        if (receiverId == senderId)
             return next("You can't send a request to yourself");
 
-        // Check if the request has been sent before
-        const alreadySent = await Request.findOne({
-            sender: req.user._id,
-            receiver: receiverId,
-            status: "pending",
-        });
-        if (alreadySent) return next("Request already sent");
-
-        // Check if the users are already friends with a status of "approved"
-        const alreadyFriends = await Request.findOne({
-            status: "approved",
+        const existingRequest = await Request.findOne({
             $or: [
-                { sender: receiverId, receiver: req.user._id },
-                { sender: req.user._id, receiver: receiverId },
+                { sender: senderId, receiver: receiverId },
+                { sender: receiverId, receiver: senderId },
             ],
+            status: { $in: ["pending", "approved"] },
         })
-            .populate({
-                path: "receiver",
-                model: User,
-                select: "fullName",
-            })
-            .populate({
-                path: "sender",
-                model: User,
-                select: "fullName",
-            });
+            .populate("sender", "fullName")
+            .populate("receiver", "fullName");
 
-        if (alreadyFriends) {
-            const friendUser =
-                alreadyFriends.sender._id.toString() === req.user._id.toString()
-                    ? alreadyFriends.receiver
-                    : alreadyFriends.sender;
+        if (existingRequest) {
+            const otherUser =
+                existingRequest.sender._id.toString() === senderId.toString()
+                    ? existingRequest.receiver
+                    : existingRequest.sender;
 
-            return next(`You are already friends with ${friendUser.fullName}`);
+            if (existingRequest.status === "pending") {
+                return next(
+                    `A friend request already exists between you and ${otherUser.fullName}`
+                );
+            } else if (existingRequest.status === "approved") {
+                return next(
+                    `You are already friends with ${otherUser.fullName}`
+                );
+            }
         }
 
         const request = Request.create({
@@ -216,10 +208,29 @@ export const getAllFriends = async (req, res, next) => {
 export const getUsersBySearch = async (req, res, next) => {
     try {
         const { search } = req.body;
+        const currentUserId = req.user.id;
+        const friendRequests = await Request.find({
+            status: "approved",
+            $or: [{ sender: currentUserId }, { receiver: currentUserId }],
+        });
+
+        const friendIds = friendRequests.map((request) =>
+            request.sender.equals(currentUserId)
+                ? request.receiver
+                : request.sender
+        );
+
+        const excludeIds = [currentUserId, ...friendIds];
+
         const users = await User.find({
-            $or: [
-                { username: { $regex: search, $options: "i" } },
-                { email: { $regex: search, $options: "i" } },
+            $and: [
+                { _id: { $nin: excludeIds } },
+                {
+                    $or: [
+                        { username: { $regex: search, $options: "i" } },
+                        { email: { $regex: search, $options: "i" } },
+                    ],
+                },
             ],
         }).select("_id username email fullName avatar");
 

@@ -11,10 +11,7 @@ const MessageSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "User",
         },
-        message: {
-            type: String,
-            required: [true, "Message is required"],
-        },
+        message: String,
         attachments: [
             {
                 public_id: {

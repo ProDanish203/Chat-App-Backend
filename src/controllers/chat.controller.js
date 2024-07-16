@@ -1,22 +1,62 @@
 import { Chat } from "../models/chat.model.js";
 import { Message } from "../models/message.model.js";
 import { getRecipientSocketId, io } from "../socket/socket.js";
+import { uploadFile } from "../utils/fileUpload.js";
 
 export const getChats = async (req, res, next) => {
     try {
-        const chats = await Chat.find({
-            participants: req.user._id,
-        }).populate([
+        const chats = await Chat.aggregate([
+            { $match: { participants: req.user._id } },
             {
-                path: "participants",
-                model: "User",
-                select: "username avatar fullName",
-                match: { _id: { $ne: req.user._id } },
+                $lookup: {
+                    from: "users",
+                    localField: "participants",
+                    foreignField: "_id",
+                    as: "participants",
+                },
             },
             {
-                path: "lastMessage",
-                model: "Message",
-                select: "message readBy sender createdAt",
+                $lookup: {
+                    from: "messages",
+                    localField: "lastMessage",
+                    foreignField: "_id",
+                    as: "lastMessageArray",
+                },
+            },
+            {
+                $addFields: {
+                    participants: {
+                        $filter: {
+                            input: "$participants",
+                            as: "participant",
+                            cond: { $ne: ["$$participant._id", req.user._id] },
+                        },
+                    },
+                    lastMessage: { $arrayElemAt: ["$lastMessageArray", 0] },
+                },
+            },
+            {
+                $project: {
+                    participants: {
+                        _id: 1,
+                        username: 1,
+                        avatar: 1,
+                        fullName: 1,
+                    },
+                    lastMessage: {
+                        message: 1,
+                        readBy: 1,
+                        sender: 1,
+                        createdAt: 1,
+                    },
+                    createdAt: 1,
+                },
+            },
+            {
+                $sort: {
+                    "lastMessage.createdAt": -1,
+                    createdAt: -1,
+                },
             },
         ]);
 
@@ -34,17 +74,37 @@ export const sendMessage = async (req, res, next) => {
     try {
         const { chatId } = req.params;
         const { message } = req.body;
+        const files = req.files;
         // Validations
         if (!chatId) return next("ChatId is required");
-        if (!message) return next("Message is required");
+        if (!message && (!files || files.length === 0))
+            return next("Message is required");
 
         const chat = await Chat.findById(chatId);
         if (!chat) return next("Chat not found");
+
+        let attachments = [];
+        if (files && files.length > 0) {
+            if (files.length > 5)
+                return next(
+                    "You can only upload a maximum of 5 files at a time"
+                );
+            for (const file of files) {
+                const result = await uploadFile(file.path);
+                if (result) {
+                    attachments.push({
+                        public_id: result.public_id,
+                        url: result.secure_url,
+                    });
+                }
+            }
+        }
 
         const newMessage = await Message.create({
             chatId,
             message,
             sender: req.user._id,
+            attachments,
         });
 
         if (!newMessage) return next("An error occured, Try again later");

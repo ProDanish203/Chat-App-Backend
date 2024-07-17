@@ -76,6 +76,7 @@ export const sendMessage = async (req, res, next) => {
         const { chatId } = req.params;
         const { message } = req.body;
         const files = req.files;
+        
         // Validations
         if (!chatId) return next("ChatId is required");
         if (!message && (!files || files.length === 0))

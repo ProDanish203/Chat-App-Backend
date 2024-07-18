@@ -1,12 +1,10 @@
 import { Router } from "express";
-import {} from "../controllers/user.controller.js";
 import { verifyAuth } from "../middlewares/auth.middleware.js";
+import { getUserById } from "../controllers/user.controller.js";
 
 const router = Router();
 router.use(verifyAuth);
 
-router.get("/current-user", getCurrentUser);
-router.get("/users", getUser);
-router.post("/logout", logoutUser);
+router.get("/:id", getUserById);
 
 export default router;

@@ -23,6 +23,16 @@ export const sendRequest = async (req, res, next) => {
             .populate("receiver", "fullName");
 
         if (existingRequest) {
+            if (existingRequest.status === "blocked") {
+                const blockedUser =
+                    existingRequest.blockedBy.toString() === senderId.toString()
+                        ? existingRequest.receiver
+                        : existingRequest.sender;
+                return next(
+                    `You can't send a request to ${blockedUser.fullName}. This user is blocked.`
+                );
+            }
+
             const otherUser =
                 existingRequest.sender._id.toString() === senderId.toString()
                     ? existingRequest.receiver
@@ -198,6 +208,84 @@ export const getAllFriends = async (req, res, next) => {
             success: true,
             message: "My Friends",
             data: friends,
+        });
+    } catch (error) {
+        next(error);
+        console.log(error);
+    }
+};
+
+export const blockUser = async (req, res, next) => {
+    try {
+        const { userToBlockId } = req.body;
+        const currentUserId = req.user._id;
+
+        if (!userToBlockId) return next("User ID is required");
+        if (userToBlockId == currentUserId)
+            return next("You can't block yourself");
+
+        const existingRequest = await Friend.findOne({
+            $or: [
+                { sender: senderId, receiver: receiverId },
+                { sender: receiverId, receiver: senderId },
+            ],
+            status: "approved",
+        });
+
+        if (!existingRequest)
+            return next("You can't block a user you are not friends with");
+
+        const blockedUser = await Friend.findByIdAndUpdate(
+            existingRequest._id,
+            {
+                status: "blocked",
+                blockedBy: currentUserId,
+            }
+        );
+
+        if (!blockedUser) return next("An error occured, Try again later");
+
+        return res.status(200).json({
+            success: true,
+            message: "User blocked successfully",
+            data: blockedUser,
+        });
+    } catch (error) {
+        next(error);
+        console.log(error);
+    }
+};
+
+export const unblockUser = async (req, res, next) => {
+    try {
+        const { userToUnblockId } = req.body;
+        const currentUserId = req.user._id;
+
+        if (!userToUnblockId) return next("User ID is required");
+
+        const request = await Friend.findOne({
+            $or: [
+                { sender: senderId, receiver: receiverId },
+                { sender: receiverId, receiver: senderId },
+            ],
+            status: "blocked",
+            blockedBy: currentUserId,
+        });
+
+        if (!request)
+            return next("You can't block a user you are not friends with");
+
+        const unblockUser = await Friend.findByIdAndUpdate(request._id, {
+            status: "approved",
+            blockedBy: "",
+        });
+
+        if (!unblockUser) return next("An error occured, Try again later");
+
+        return res.status(200).json({
+            success: true,
+            message: "User unblocked successfully",
+            data: unblockUser,
         });
     } catch (error) {
         next(error);

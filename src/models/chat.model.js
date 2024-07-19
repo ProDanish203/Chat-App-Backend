@@ -2,30 +2,30 @@ import mongoose, { Schema, model } from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
 
 const ChatSchema = new Schema(
-  {
-    participants: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    lastMessage: {
-      type: Schema.Types.ObjectId,
-      ref: "Message",
+    {
+        participants: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "User",
+            },
+        ],
+        lastMessage: {
+            type: Schema.Types.ObjectId,
+            ref: "Message",
+        },
+        createdBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+        },
+        isGroupChat: {
+            type: Boolean,
+            default: false,
+        },
+        groupChatName: String,
+        groupDescription: String,
     },
-    createdBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-    },
-    isGroupChat: {
-      type: Boolean,
-      default: false,
-    },
-    groupChatName: String,
-  },
-  { timestamps: true }
+    { timestamps: true }
 );
-
 
 ChatSchema.plugin(mongoosePaginate);
 

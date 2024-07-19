@@ -2,11 +2,11 @@ import mongoose, { Schema, model } from "mongoose";
 import mongoosePaginate from "mongoose-paginate-v2";
 import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
-const RequestSchema = new Schema(
+const FriendSchema = new Schema(
     {
         status: {
             type: String,
-            enum: ["pending", "approved", "rejected"],
+            enum: ["pending", "approved", "rejected", "blocked"],
             default: "pending",
         },
         sender: {
@@ -17,12 +17,15 @@ const RequestSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "User",
         },
+        blockedBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+        },
     },
     { timestamps: true }
 );
 
-RequestSchema.plugin(mongoosePaginate);
-RequestSchema.plugin(aggregatePaginate);
+FriendSchema.plugin(mongoosePaginate);
+FriendSchema.plugin(aggregatePaginate);
 
-export const Request =
-    mongoose.models.Request || model("Request", RequestSchema);
+export const Friend = mongoose.models.Friend || model("Friend", FriendSchema);

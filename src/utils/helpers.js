@@ -1,8 +1,3 @@
-import { User } from "../models/user.model.js";
-import { Request } from "../models/request.model.js";
-import { Chat } from "../models/chat.model.js";
-import { Message } from "../models/message.model.js";
-
 export const getBase64 = (file) =>
     `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
 

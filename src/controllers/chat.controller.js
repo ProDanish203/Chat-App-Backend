@@ -228,15 +228,18 @@ export const leaveGroup = async (req, res, next) => {
             return next("You are not a member of this group");
 
         // Make any random participant the new group creator if the current user is the creator
-        // if (group.createdBy.toString() === currentUserId.toString()) {
-        //     const randomParticipant = group.participants.find(participant => participant.toString() !== currentUserId.toString());
-        //     if (randomParticipant) {
-        //     group.createdBy = randomParticipant;
-        //     }
-        // }
+        if (group.createdBy.toString() === currentUserId.toString()) {
+            const randomParticipant = group.participants.find(
+                (participant) =>
+                    participant.toString() !== currentUserId.toString()
+            );
+            if (randomParticipant) {
+                group.createdBy = randomParticipant;
+            }
+        }
 
-        if (group.createdBy.toString() === currentUserId.toString())
-            return next("You cannot leave a group you created");
+        // if (group.createdBy.toString() === currentUserId.toString())
+        //     return next("You cannot leave a group you created");
 
         group.participants = group.participants.filter(
             (participant) => participant.toString() !== currentUserId.toString()

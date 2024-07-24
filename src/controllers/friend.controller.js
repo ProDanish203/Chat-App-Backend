@@ -12,7 +12,7 @@ export const sendRequest = async (req, res, next) => {
         if (receiverId == senderId)
             return next("You can't send a request to yourself");
 
-        const existingRequest = await Request.findOne({
+        const existingRequest = await Friend.findOne({
             $or: [
                 { sender: senderId, receiver: receiverId },
                 { sender: receiverId, receiver: senderId },
@@ -49,7 +49,7 @@ export const sendRequest = async (req, res, next) => {
             }
         }
 
-        const request = Request.create({
+        const request = Friend.create({
             sender: req.user._id,
             receiver: receiverId,
         });
@@ -78,14 +78,14 @@ export const acceptOrRejectRequest = async (req, res, next) => {
             return next("Invalid status");
 
         // Before updating the request, check if the request exists and the receiver is the current user
-        const request = await Request.findOne({
+        const request = await Friend.findOne({
             _id: id,
             receiver: req.user._id,
         });
 
         if (!request) return next("Request not found");
 
-        const updatedRequest = await Request.findOneAndUpdate(request._id, {
+        const updatedRequest = await Friend.findOneAndUpdate(request._id, {
             status,
         });
         if (!updatedRequest) return next("An error occured, Try again later");
@@ -112,7 +112,7 @@ export const withdrawRequest = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        const request = await Request.findOneAndDelete({
+        const request = await Friend.findOneAndDelete({
             _id: id,
             sender: req.user._id,
         });
@@ -136,7 +136,7 @@ export const getIncomingRequests = async (req, res, next) => {
         const limit = +(req.query.limit || 10);
 
         const incomingRequests = await getPaginatedData({
-            model: Request,
+            model: Friend,
             query: { receiver: req.user._id, status: "pending" },
             page,
             limit,
@@ -164,7 +164,7 @@ export const getPendingRequest = async (req, res, next) => {
         const limit = +(req.query.limit || 10);
 
         const pendingRequests = await getPaginatedData({
-            model: Request,
+            model: Friend,
             query: { sender: req.user._id, status: "pending" },
             page,
             limit,
@@ -193,7 +193,7 @@ export const getAllFriends = async (req, res, next) => {
         const search = req.query.search || "";
 
         const friends = await getPaginatedFriends({
-            model: Request,
+            model: Friend,
             query: {
                 status: "approved",
                 $or: [{ sender: req.user._id }, { receiver: req.user._id }],
@@ -217,17 +217,16 @@ export const getAllFriends = async (req, res, next) => {
 
 export const blockUser = async (req, res, next) => {
     try {
-        const { userToBlockId } = req.body;
+        const { id } = req.params;
         const currentUserId = req.user._id;
 
-        if (!userToBlockId) return next("User ID is required");
-        if (userToBlockId == currentUserId)
-            return next("You can't block yourself");
+        if (!id) return next("User ID is required");
+        if (id == currentUserId) return next("You can't block yourself");
 
         const existingRequest = await Friend.findOne({
             $or: [
-                { sender: senderId, receiver: receiverId },
-                { sender: receiverId, receiver: senderId },
+                { sender: currentUserId, receiver: id },
+                { sender: id, receiver: currentUserId },
             ],
             status: "approved",
         });
@@ -258,15 +257,15 @@ export const blockUser = async (req, res, next) => {
 
 export const unblockUser = async (req, res, next) => {
     try {
-        const { userToUnblockId } = req.body;
+        const { id } = req.params;
         const currentUserId = req.user._id;
 
-        if (!userToUnblockId) return next("User ID is required");
+        if (!id) return next("User ID is required");
 
         const request = await Friend.findOne({
             $or: [
-                { sender: senderId, receiver: receiverId },
-                { sender: receiverId, receiver: senderId },
+                { sender: currentUserId, receiver: id },
+                { sender: id, receiver: currentUserId },
             ],
             status: "blocked",
             blockedBy: currentUserId,

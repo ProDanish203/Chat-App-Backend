@@ -1,3 +1,4 @@
+import { Friend } from "../models/friend.model.js";
 import { User } from "../models/user.model.js";
 
 export const getUserById = async (req, res, next) => {
@@ -25,7 +26,7 @@ export const getUsersBySearch = async (req, res, next) => {
     try {
         const { search } = req.body;
         const currentUserId = req.user.id;
-        const friendRequests = await Request.find({
+        const friendRequests = await Friend.find({
             status: "approved",
             $or: [{ sender: currentUserId }, { receiver: currentUserId }],
         });
